@@ -12,7 +12,13 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 # Engine = Python aur PostgreSQL ke beech actual connection
 # Socho isko ek phone line ki tarah
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,      # har request se pehle connection check karo
+    pool_recycle=300,        # 5 minute baad connection refresh karo
+    pool_size=5,             # max 5 connections pool mein
+    max_overflow=10          # extra 10 connections allowed
+)
 
 # SessionLocal = ek factory jo database sessions banati hai
 # Har API request ko apna alag session milta hai

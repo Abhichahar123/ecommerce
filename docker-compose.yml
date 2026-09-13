@@ -4,3 +4,11 @@ services:
     container_name: redis_cache
     ports:
       - "6379:6379"
+
+  redis-commander:
+    image: rediscommander/redis-commander
+    container_name: redis_commander
+    environment:
+      - REDIS_HOSTS=local:redis_cache:6379
+    ports:
+      - "8081:8081"
