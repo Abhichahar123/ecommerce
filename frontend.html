@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .card h2 { color: #444; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        button { width: 100%; padding: 10px; margin: 5px 0; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.success { background: #28a745; }
+        button.warning { background: #ffc107; color: #333; }
+        .response { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 12px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+        .response.error { background: #ffe6e6; color: #dc3545; }
+        .response.success { background: #e6ffe6; color: #28a745; }
+        .token-display { background: #fff3cd; padding: 10px; border-radius: 5px; font-size: 11px; word-break: break-all; margin: 10px 0; }
+        .status { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold; }
+        .status.online { background: #e6ffe6; color: #28a745; }
+        .status.offline { background: #ffe6e6; color: #dc3545; }
+        .services { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .service-badge { padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer; border: none; }
+        select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 5px; }
+        .product-list { max-height: 300px; overflow-y: auto; }
+        .product-item { padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin: 5px 0; display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛒 E-Commerce Microservices — Test Panel</h1>
+
+        <!-- Service Status -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h2>🔌 Service Status</h2>
+            <div class="services">
+                <button class="service-badge" onclick="checkHealth('http://127.0.0.1:8001', 'auth-status')" style="background:#007bff;color:white">Auth Service</button>
+                <button class="service-badge" onclick="checkHealth('http://127.0.0.1:8002', 'product-status')" style="background:#28a745;color:white">Product Service</button>
+                <button class="service-badge" onclick="checkHealth('http://127.0.0.1:8003', 'order-status')" style="background:#ffc107;color:#333">Order Service</button>
+                <button class="service-badge" onclick="checkHealth('http://127.0.0.1:8004', 'payment-status')" style="background:#dc3545;color:white">Payment Service</button>
+                <button class="service-badge" onclick="checkAllHealth()" style="background:#6f42c1;color:white">Check All</button>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <span>Auth: <span id="auth-status" class="status offline">Unknown</span></span>
+                <span>Product: <span id="product-status" class="status offline">Unknown</span></span>
+                <span>Order: <span id="order-status" class="status offline">Unknown</span></span>
+                <span>Payment: <span id="payment-status" class="status offline">Unknown</span></span>
+            </div>
+        </div>
+
+        <!-- Token Display -->
+        <div class="card" style="margin-bottom: 20px;" id="token-card" style="display:none">
+            <h2>🔑 Current Token</h2>
+            <div class="token-display" id="token-display">No token yet — login karo</div>
+        </div>
+
+        <div class="grid">
+
+            <!-- Auth Section -->
+            <div class="card">
+                <h2>👤 Auth Service</h2>
+
+                <h3 style="margin:10px 0 5px">Signup</h3>
+                <input type="email" id="signup-email" placeholder="Email" value="test@example.com">
+                <input type="text" id="signup-username" placeholder="Username" value="testuser">
+                <input type="password" id="signup-password" placeholder="Password" value="mypassword123">
+                <button onclick="signup()">Signup</button>
+                <div class="response" id="signup-response"></div>
+
+                <h3 style="margin:15px 0 5px">Login</h3>
+                <input type="email" id="login-email" placeholder="Email" value="test@example.com">
+                <input type="password" id="login-password" placeholder="Password" value="mypassword123">
+                <button class="success" onclick="login()">Login & Get Token</button>
+                <div class="response" id="login-response"></div>
+
+                <h3 style="margin:15px 0 5px">Get My Profile</h3>
+                <button class="warning" onclick="getMe()">GET /auth/me</button>
+                <div class="response" id="me-response"></div>
+            </div>
+
+            <!-- Product Section -->
+            <div class="card">
+                <h2>📦 Product Service</h2>
+
+                <h3 style="margin:10px 0 5px">Create Product</h3>
+                <input type="text" id="product-name" placeholder="Product Name" value="iPhone 15">
+                <input type="number" id="product-price" placeholder="Price" value="79999">
+                <input type="number" id="product-stock" placeholder="Stock" value="10">
+                <input type="text" id="product-category" placeholder="Category" value="phones">
+                <button onclick="createProduct()">Create Product</button>
+                <div class="response" id="create-product-response"></div>
+
+                <h3 style="margin:15px 0 5px">All Products</h3>
+                <button class="success" onclick="getProducts()">GET /products/</button>
+                <div class="product-list" id="product-list"></div>
+            </div>
+
+            <!-- Order Section -->
+            <div class="card">
+                <h2>🛒 Order Service</h2>
+
+                <h3 style="margin:10px 0 5px">Place Order</h3>
+                <input type="number" id="order-product-id" placeholder="Product ID" value="1">
+                <input type="number" id="order-quantity" placeholder="Quantity" value="1">
+                <button onclick="placeOrder()">Place Order</button>
+                <div class="response" id="order-response"></div>
+
+                <h3 style="margin:15px 0 5px">My Orders</h3>
+                <button class="success" onclick="getOrders()">GET /orders/</button>
+                <div class="response" id="orders-list"></div>
+            </div>
+
+            <!-- Payment Section -->
+            <div class="card">
+                <h2>💳 Payment Service</h2>
+
+                <h3 style="margin:10px 0 5px">Process Payment</h3>
+                <input type="number" id="payment-order-id" placeholder="Order ID" value="1">
+                <input type="number" id="payment-amount" placeholder="Amount" value="79999">
+                <input type="text" id="payment-key" placeholder="Idempotency Key" value="pay_001">
+                <button onclick="processPayment()">Process Payment</button>
+                <div class="response" id="payment-response"></div>
+
+                <h3 style="margin:15px 0 5px">My Payments</h3>
+                <button class="success" onclick="getPayments()">GET /payments/</button>
+                <div class="response" id="payments-list"></div>
+
+                <h3 style="margin:15px 0 5px">Test Idempotency</h3>
+                <button class="warning" onclick="testIdempotency()">Same Key — 3 Baar</button>
+                <div class="response" id="idempotency-response"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const AUTH_URL = 'http://127.0.0.1:8001';
+        const PRODUCT_URL = 'http://127.0.0.1:8002';
+        const ORDER_URL = 'http://127.0.0.1:8003';
+        const PAYMENT_URL = 'http://127.0.0.1:8004';
+
+        let token = localStorage.getItem('token') || '';
+
+        if (token) {
+            document.getElementById('token-display').textContent = token;
+        }
+
+        function showResponse(id, data, isError = false) {
+            const el = document.getElementById(id);
+            el.textContent = JSON.stringify(data, null, 2);
+            el.className = 'response ' + (isError ? 'error' : 'success');
+        }
+
+        async function apiCall(url, method = 'GET', body = null, useToken = false) {
+            const headers = { 'Content-Type': 'application/json' };
+            if (useToken && token) headers['Authorization'] = `Bearer ${token}`;
+
+            const options = { method, headers };
+            if (body) options.body = JSON.stringify(body);
+
+            const response = await fetch(url, options);
+            const data = await response.json();
+            return { data, ok: response.ok, status: response.status };
+        }
+
+        async function checkHealth(baseUrl, statusId) {
+            try {
+                const { data, ok } = await apiCall(`${baseUrl}/health`);
+                const el = document.getElementById(statusId);
+                if (ok) {
+                    el.textContent = '🟢 Online';
+                    el.className = 'status online';
+                } else {
+                    el.textContent = '🔴 Error';
+                    el.className = 'status offline';
+                }
+            } catch {
+                const el = document.getElementById(statusId);
+                el.textContent = '🔴 Offline';
+                el.className = 'status offline';
+            }
+        }
+
+        async function checkAllHealth() {
+            await checkHealth(AUTH_URL, 'auth-status');
+            await checkHealth(PRODUCT_URL, 'product-status');
+            await checkHealth(ORDER_URL, 'order-status');
+            await checkHealth(PAYMENT_URL, 'payment-status');
+        }
+
+        async function signup() {
+            const { data, ok } = await apiCall(`${AUTH_URL}/auth/signup`, 'POST', {
+                email: document.getElementById('signup-email').value,
+                username: document.getElementById('signup-username').value,
+                password: document.getElementById('signup-password').value
+            });
+            showResponse('signup-response', data, !ok);
+        }
+
+        async function login() {
+            const { data, ok } = await apiCall(`${AUTH_URL}/auth/login`, 'POST', {
+                email: document.getElementById('login-email').value,
+                password: document.getElementById('login-password').value
+            });
+
+            if (ok) {
+                token = data.access_token;
+                localStorage.setItem('token', token);
+                document.getElementById('token-display').textContent = token;
+                showResponse('login-response', { message: 'Login successful!', token_preview: token.substring(0, 50) + '...' });
+            } else {
+                showResponse('login-response', data, true);
+            }
+        }
+
+        async function getMe() {
+            const { data, ok } = await apiCall(`${AUTH_URL}/auth/me`, 'GET', null, true);
+            showResponse('me-response', data, !ok);
+        }
+
+        async function createProduct() {
+            const { data, ok } = await apiCall(`${PRODUCT_URL}/products/`, 'POST', {
+                name: document.getElementById('product-name').value,
+                price: parseFloat(document.getElementById('product-price').value),
+                stock: parseInt(document.getElementById('product-stock').value),
+                category: document.getElementById('product-category').value
+            });
+            showResponse('create-product-response', data, !ok);
+            if (ok) getProducts();
+        }
+
+        async function getProducts() {
+            const { data, ok } = await apiCall(`${PRODUCT_URL}/products/`);
+            if (ok && Array.isArray(data)) {
+                const listEl = document.getElementById('product-list');
+                if (data.length === 0) {
+                    listEl.innerHTML = '<p style="text-align:center;color:#999;padding:10px">No products yet</p>';
+                } else {
+                    listEl.innerHTML = data.map(p => `
+                        <div class="product-item">
+                            <div>
+                                <strong>${p.name}</strong><br>
+                                <small>ID: ${p.id} | ₹${p.price} | Stock: ${p.stock}</small>
+                            </div>
+                            <button onclick="document.getElementById('order-product-id').value=${p.id};document.getElementById('payment-amount').value=${p.price}" 
+                                    style="width:auto;padding:5px 10px;font-size:12px">
+                                Select
+                            </button>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
+        async function placeOrder() {
+            const { data, ok } = await apiCall(`${ORDER_URL}/orders/`, 'POST', {
+                product_id: parseInt(document.getElementById('order-product-id').value),
+                quantity: parseInt(document.getElementById('order-quantity').value)
+            }, true);
+            showResponse('order-response', data, !ok);
+            if (ok) {
+                document.getElementById('payment-order-id').value = data.id;
+                document.getElementById('payment-amount').value = data.total_price;
+                document.getElementById('payment-key').value = `pay_order_${data.id}_${Date.now()}`;
+            }
+        }
+
+        async function getOrders() {
+            const { data, ok } = await apiCall(`${ORDER_URL}/orders/`, 'GET', null, true);
+            showResponse('orders-list', data, !ok);
+        }
+
+        async function processPayment() {
+            const { data, ok } = await apiCall(`${PAYMENT_URL}/payments/`, 'POST', {
+                order_id: parseInt(document.getElementById('payment-order-id').value),
+                amount: parseFloat(document.getElementById('payment-amount').value),
+                idempotency_key: document.getElementById('payment-key').value
+            }, true);
+            showResponse('payment-response', data, !ok);
+        }
+
+        async function getPayments() {
+            const { data, ok } = await apiCall(`${PAYMENT_URL}/payments/`, 'GET', null, true);
+            showResponse('payments-list', data, !ok);
+        }
+
+        async function testIdempotency() {
+            const key = `pay_idem_test_${Date.now()}`;
+            const results = [];
+
+            for (let i = 0; i < 3; i++) {
+                const { data, ok } = await apiCall(`${PAYMENT_URL}/payments/`, 'POST', {
+                    order_id: parseInt(document.getElementById('payment-order-id').value) || 1,
+                    amount: parseFloat(document.getElementById('payment-amount').value) || 1000,
+                    idempotency_key: key
+                }, true);
+                results.push({ attempt: i + 1, payment_id: data.id, status: data.status });
+            }
+
+            showResponse('idempotency-response', {
+                message: 'Same key 3 baar use kiya — same payment_id aana chahiye',
+                results
+            });
+        }
+
+        // Page load pe products aur health check karo
+        window.onload = () => {
+            checkAllHealth();
+            getProducts();
+        };
+    </script>
+</body>
+</html>

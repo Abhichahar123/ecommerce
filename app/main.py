@@ -1,6 +1,4 @@
-﻿from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
+from fastapi import FastAPI
 from .database import engine, Base
 from . import models
 from .routes import payments
@@ -8,30 +6,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+app = FastAPI(title="Payment Service")
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+
+@app.on_event("startup")
+def startup():
     Base.metadata.create_all(bind=engine)
     print("✓ Payment tables created successfully")
-    yield
 
-
-app = FastAPI(title="Payment Service", lifespan=lifespan)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 @app.get("/")
 def read_root():
     return {"message": "Payment service is running"}
 
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "payment"}
+
 
 app.include_router(payments.router)
