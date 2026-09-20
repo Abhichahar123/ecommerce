@@ -1,0 +1,60 @@
+name: Full CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  # Job 1: Auth Service Tests
+  test-auth:
+    name: Test Auth Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install and test
+        working-directory: auth-service
+        run: |
+          pip install -r requirements.txt
+          pytest tests/ -v
+
+  # Job 2: Product Service Tests
+  test-product:
+    name: Test Product Service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install and test
+        working-directory: product-service
+        run: |
+          pip install -r requirements.txt
+          pytest tests/ -v
+
+  # Job 3: Deploy (sirf tab jab dono tests pass hon)
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs: [test-auth, test-product]  # dono jobs ka wait karo
+    if: github.ref == 'refs/heads/main'  # sirf main branch pe
+
+    steps:
+      - name: Deploy Auth Service
+        run: |
+          curl -X POST "${{ secrets.RENDER_AUTH_DEPLOY_URL }}"
+
+      - name: Deploy Product Service
+        run: |
+          curl -X POST "${{ secrets.RENDER_PRODUCT_DEPLOY_URL }}"
+
+      - name: Deploy Order Service
+        run: |
+          curl -X POST "${{ secrets.RENDER_ORDER_DEPLOY_URL }}"
+
+      - name: Deploy Payment Service
+        run: |
+          curl -X POST "${{ secrets.RENDER_PAYMENT_DEPLOY_URL }}"
