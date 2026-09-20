@@ -16,6 +16,11 @@ jobs:
           python-version: '3.11'
       - name: Install and test
         working-directory: auth-service
+        env:
+          DATABASE_URL: "sqlite:///./test.db"
+          SECRET_KEY: "test-secret-key-for-ci"
+          ALGORITHM: "HS256"
+          ACCESS_TOKEN_EXPIRE_MINUTES: "30"
         run: |
           pip install -r requirements.txt
           pytest tests/ -v
@@ -31,6 +36,9 @@ jobs:
           python-version: '3.11'
       - name: Install and test
         working-directory: product-service
+        env:
+          DATABASE_URL: "sqlite:///./test.db"
+          REDIS_URL: "redis://localhost:6379"
         run: |
           pip install -r requirements.txt
           pytest tests/ -v
@@ -39,22 +47,18 @@ jobs:
   deploy:
     name: Deploy to Render
     runs-on: ubuntu-latest
-    needs: [test-auth, test-product]  # dono jobs ka wait karo
-    if: github.ref == 'refs/heads/main'  # sirf main branch pe
+    needs: [test-auth, test-product]
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Deploy Auth Service
-        run: |
-          curl -X POST "${{ secrets.RENDER_AUTH_DEPLOY_URL }}"
+        run: curl -X POST "${{ secrets.RENDER_AUTH_DEPLOY_URL }}"
 
       - name: Deploy Product Service
-        run: |
-          curl -X POST "${{ secrets.RENDER_PRODUCT_DEPLOY_URL }}"
+        run: curl -X POST "${{ secrets.RENDER_PRODUCT_DEPLOY_URL }}"
 
       - name: Deploy Order Service
-        run: |
-          curl -X POST "${{ secrets.RENDER_ORDER_DEPLOY_URL }}"
+        run: curl -X POST "${{ secrets.RENDER_ORDER_DEPLOY_URL }}"
 
       - name: Deploy Payment Service
-        run: |
-          curl -X POST "${{ secrets.RENDER_PAYMENT_DEPLOY_URL }}"
+        run: curl -X POST "${{ secrets.RENDER_PAYMENT_DEPLOY_URL }}"
